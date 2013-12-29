@@ -41,23 +41,33 @@ import os.path
 import time
 import urllib
 import wsgiref.handlers
+import facebook
 
 import json
-from google.appengine.ext import db
-from google.appengine.ext import webapp
+import webapp2
+import jinja2
+from google.appengine.ext import ndb
 from google.appengine.ext.webapp import util
-from google.appengine.ext.webapp import template
-
-class User(db.Model):
-    id = db.StringProperty(required=True)
-    created = db.DateTimeProperty(auto_now_add=True)
-    updated = db.DateTimeProperty(auto_now=True)
-    name = db.StringProperty(required=True)
-    profile_url = db.StringProperty(required=True)
-    access_token = db.StringProperty(required=True)
 
 
-class BaseHandler(webapp.RequestHandler):
+TEMPLATE = "templates/oauth.html"
+JINJA_ENVIRONMENT = jinja2.Environment(
+    loader=jinja2.FileSystemLoader(os.path.dirname(TEMPLATE)),
+    extensions=['jinja2.ext.autoescape'],
+    autoescape=True)
+
+
+class User(ndb.Model):
+    id = ndb.StringProperty(required=True)
+    created = ndb.DateTimeProperty(auto_now_add=True)
+    updated = ndb.DateTimeProperty(auto_now=True)
+    name = ndb.StringProperty(required=True)
+    profile_url = ndb.StringProperty(required=True)
+    access_token = ndb.StringProperty(required=True)
+
+
+
+class BaseHandler(webapp2.RequestHandler):
     @property
     def current_user(self):
         """Returns the logged in Facebook user, or None if unconnected."""
@@ -65,20 +75,37 @@ class BaseHandler(webapp.RequestHandler):
             self._current_user = None
             user_id = parse_cookie(self.request.cookies.get("fb_user"))
             if user_id:
-                self._current_user = User.get_by_key_name(user_id)
+                self._current_user = User.get_by_id(user_id)
         return self._current_user
+    
 
 
+class MainFormHandler(BaseHandler):
+    def get(self):
+        path = "form.html"
+        graph = facebook.GraphAPI(self.current_user.access_token)
+        print self.current_user
+        groups = graph.get_connections("me","groups")
+
+        print groups
+        args = dict(current_user=self.current_user, groups = groups)
+        template = JINJA_ENVIRONMENT.get_template(path)
+        self.response.out.write(template.render(args))
+
+
+        
 class HomeHandler(BaseHandler):
     def get(self):
-        path = os.path.join(os.path.dirname(__file__), "oauth.html")
+        path = "oauth.html"
         args = dict(current_user=self.current_user)
-        self.response.out.write(template.render(path, args))
+        template = JINJA_ENVIRONMENT.get_template(path)
+        self.response.out.write(template.render(args))
 
 
 class LoginHandler(BaseHandler):
     def get(self):
         verification_code = self.request.get("code")
+        print_debug("v_code",verification_code)
         args = dict(client_id=FACEBOOK_APP_ID,
                     redirect_uri=self.request.path_url)
         if self.request.get("code"):
@@ -94,7 +121,9 @@ class LoginHandler(BaseHandler):
             profile = json.load(urllib.urlopen(
                 "https://graph.facebook.com/me?" +
                 urllib.urlencode(dict(access_token=access_token))))
-            user = User(key_name=str(profile["id"]), id=str(profile["id"]),
+
+            #Create the user and add them to the db
+            user = User(id=str(profile["id"]),
                         name=profile["name"], access_token=access_token,
                         profile_url=profile["link"])
             user.put()
@@ -129,7 +158,6 @@ def set_cookie(response, name, value, domain=None, path="/", expires=None):
     if expires:
         cookie[name]["expires"] = email.utils.formatdate(
             expires, localtime=False, usegmt=True)
-    #response.headers._headers.append(("Set-Cookie", cookie.output()[12:]))
     response.headers.add_header("Set-Cookie", cookie.output()[12:])
 
 def parse_cookie(value):
@@ -154,7 +182,6 @@ def parse_cookie(value):
 
 def cookie_signature(*parts):
     """Generates a cookie signature.
-
     We use the Facebook app secret since it is different for every app (so
     people using this example don't accidentally all use the same secret).
     """
@@ -163,14 +190,11 @@ def cookie_signature(*parts):
         hash.update(part)
     return hash.hexdigest()
 
-
-def main():
-    util.run_wsgi_app(webapp.WSGIApplication([
+application = webapp2.WSGIApplication([
         (r"/", HomeHandler),
         (r"/auth/login", LoginHandler),
         (r"/auth/logout", LogoutHandler),
-    ]))
+        (r"/form", MainFormHandler)
+    ], debug=True)
 
 
-if __name__ == "__main__":
-    main()
