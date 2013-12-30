@@ -1,4 +1,4 @@
-application: new-project-template
+application: habitatfbpost
 version: 1
 runtime: python27
 api_version: 1
@@ -13,12 +13,12 @@ handlers:
   static_files: \1
   upload: (.*\.(gif|png|jpg|ico|js|css))
 
-- url: .*
+- url: /.*
   script: example.application
 
 libraries:
 - name: webapp2
-  version: "2.5.2"
+  version: latest
 - name: jinja2
   version: latest
 

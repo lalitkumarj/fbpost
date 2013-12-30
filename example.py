@@ -35,13 +35,18 @@ import webapp2
 import os
 import jinja2
 import urllib2
+import json
 
+from google.appengine.ext import blobstore
+from google.appengine.ext.webapp import blobstore_handlers
 from google.appengine.ext import db
+from google.appengine.api import images
 from webapp2_extras import sessions
 
 config = {}
 config['webapp2_extras.sessions'] = dict(secret_key='')
 
+upload_url = blobstore.create_upload_url('/upload')
 
 class User(db.Model):
     id = db.StringProperty(required=True)
@@ -119,7 +124,7 @@ class BaseHandler(webapp2.RequestHandler):
         This snippet of code is taken from the webapp2 framework documentation.
         See more at
         http://webapp-improved.appspot.com/api/webapp2_extras/sessions.html
-
+fac
         """
         return self.session_store.get_session()
     
@@ -138,7 +143,7 @@ class BaseHandler(webapp2.RequestHandler):
 class HomeHandler(BaseHandler):
     def get(self):        
         if self.current_user:
-            self.redirect("/form")
+            self.redirect("/service")
         else:
             self.redirect("/login")
 
@@ -160,26 +165,57 @@ class FormHandler(BaseHandler):
                     facebook_app_id=FACEBOOK_APP_ID,
                     current_user=self.current_user,
                     pages=pages['data'],
-                    groups=groups['data']
+                    groups=groups['data'],
+                    url = upload_url 
                     )))
         
     def post(self):
         description = self.request.get('description_input')
+        
         select_pages = self.request.get('select_pages',allow_multiple=True)
         select_groups = self.request.get('select_groups',allow_multiple=True)
-#Which page_id to take? Need to reject more then one selection client side? Radio box?
-        # for page in select_pages:
-        #     page_id = self.graph.put_wall_post(description, att{"picture":"facebook.com/10100739842477767"}, page)['id']
-        # for group in select_groups:
-        #     print self.graph.put_wall_post(description, {}, group)
         
-        #
+        blob_key = self.request.get('imagekey')
+        blob_reader = blobstore.BlobReader(blob_key,buffer_size=1048576)
 
-class ImageHandler(BaseHandler):
+        pages = self.graph.get_connections("me","accounts")['data']
+        pages_dict = dict([(page['id'], page['access_token']) for page in pages])
+        
+        groups = self.graph.get_connections("me","groups")['data']
+        #groups_dict = dict([(group['id'], group['access_token']) for group in groups])
+        #images.ImagesService imagesService = ImagesServiceFactory.getImagesService();
+
+#Which page_id to take? Need to reject more then one selection client side? Radio box?
+        for page_id in select_pages:
+            print page
+            print pages_dict[page_id]
+            posted_id =  self.graph.put_photo(blob_reader, description, album_id=page_id, access_token=pages_dict[page_id])['id']
+           #page_id = self.graph.put_wall_post(description, att{"picture":"facebook.com/10100739842477767"}, page)['id']
+        for group in select_groups:
+            #print images.get_serving_url(blob_key)
+            self.graph.put_wall_post(description, {"link":"http://facebook.com/%s"%(posted_id),"picture":images.get_serving_url(blob_key)}, group)
+            
+        
+        
+
+class ImageHandler(blobstore_handlers.BlobstoreUploadHandler):
         
     def post(self):
-        image  = self.request.POST.get("files[]").file
-        print self.graph.put_photo(image,"This is a bit of a long description of this image. ope you like it", "10100739842477767")
+        upload_files = self.get_uploads('files[]')
+        blob_info = upload_files[0]
+        self.response.headers['Content-Type'] = 'application/json'   
+        obj = {
+            'key': str(blob_info.key()) 
+            } 
+        print "make a key"+obj['key']
+        self.response.out.write(json.dumps(obj))
+
+
+
+        #self.redirect('/serve/%s' % blob_info.key())
+
+#image  = self.request.POST.get("files[]").file
+        #print self.graph.put_photo(image,"This is a bit of a long description of this image. ope you like it", "10100739842477767")
 
 
 #Which page_id to take? Need to reject more then one selection client side? Radio box?
@@ -208,7 +244,7 @@ jinja_environment = jinja2.Environment(
     loader=jinja2.FileSystemLoader(os.path.dirname(__file__)) , autoescape=True, extensions=['jinja2.ext.autoescape'])
 
 application = webapp2.WSGIApplication(
-    [('/', HomeHandler), ('/login', LoginHandler), ('/logout', LogoutHandler), ('/form', FormHandler),('/form/post',FormHandler),('/form/image',ImageHandler)],
+    [('/service', FormHandler),('/', HomeHandler), ('/login', LoginHandler), ('/logout', LogoutHandler), ('/service/post',FormHandler),('/upload',ImageHandler)],
     debug=True,
     config=config
 )
