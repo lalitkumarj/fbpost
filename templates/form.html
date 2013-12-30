@@ -157,7 +157,7 @@
 	console.log($(this).serialize() );
 	$.post("/service/post", $("#description_form").serialize());
 	$("#description_form")[0].reset();
-	window.location = "/login"
+	window.location = "/end"
 	return false;
 	} );
       </script>
@@ -168,38 +168,3 @@
 </div>
 
 {% endblock %}
-	   '//jquery-file-upload.appspot.com/' : 'service/post/'
-	    // uploadButton = $('<button/>')
-	    //     .addClass('btn btn-primary')
-	    //     .prop('disabled', true)
-	    //     .text('Processing...')
-	    //     .on('click', function () {
-	    //         var $this = $(this),
-	    //             data = $this.data();
-	    //         $this
-	    //             .off('click')
-            //             .text('Abort')
-	    //             .on('click', function () {
-	    //                 $this.remove();
-	    //                 data.abort();
-	    //             });
-	    //         data.submit().always(function () {
-	    //             $this.remove();
-	    //         });
-	    //     });
-	 <!-- $(function () { -->
-	 <!-- $('#fileupload').fileupload({ -->
-	 <!-- dataType: 'json', -->
- 	 <!-- done: function (e, data) { -->
-	 <!-- Get the blob key here! -->
-	 <!-- console.log(data.result.key); -->
-	 <!-- $('#imagekey').val(data.result.key); -->
-	 <!-- $('#main_form').css("display", "block"); -->
-	 <!--      $.scrollTo('#main_form') -->
-	 <!-- }, -->
-         <!-- progressall: function (e, data) { -->
-	 <!-- var progress = parseInt(data.loaded / data.total * 100, 10); -->
-	 <!-- $('#progress .bar').css('width',progress + '%'); -->
-	 <!-- } -->
-	 <!-- }); -->
-      	 <!-- }); -->

@@ -144,18 +144,30 @@ fac
 
 class HomeHandler(BaseHandler):
     def get(self):        
-        if self.current_user:
+        if self.current_user != None:
             self.redirect("/service")
         else:
             self.redirect("/login")
 
 class LoginHandler(BaseHandler):
     def get(self):
-        template = jinja_environment.get_template('login.html')
-        self.response.out.write(template.render(dict(
-                    facebook_app_id=FACEBOOK_APP_ID,
-                    current_user=self.current_user
-                    )))
+        if self.current_user:
+            self.redirect("/service")
+        else:
+            template = jinja_environment.get_template('login.html')
+            self.response.out.write(template.render(dict(
+                        facebook_app_id=FACEBOOK_APP_ID,
+                        current_user=self.current_user
+                        )))
+
+class EndHandler(BaseHandler):
+    def get(self):
+        if self.current_user != None:
+            template = jinja_environment.get_template('end.html')
+            self.response.out.write(template.render(dict(
+                    facebook_app_id=FACEBOOK_APP_ID)))
+        else:
+            self.redirect("/")
         
 class FormHandler(BaseHandler):
     def get(self):
@@ -236,29 +248,9 @@ jinja_environment = jinja2.Environment(
     loader=jinja2.FileSystemLoader(os.path.dirname("templates/base.html")) , autoescape=True, extensions=['jinja2.ext.autoescape'])
 
 application = webapp2.WSGIApplication(
-    [('/service', FormHandler),('/', HomeHandler), ('/login', LoginHandler), ('/logout', LogoutHandler), ('/service/post',FormHandler),('/upload',ImageHandler), ('/upload-redirect?',RedirectHandler)],
+    [('/service', FormHandler),('/', HomeHandler), ('/login', LoginHandler), ('/logout', LogoutHandler), ('/service/post',FormHandler),('/upload',ImageHandler), ('/upload-redirect?',RedirectHandler), ('/end',EndHandler)],
     debug=True,
     config=config
 )
 
 
-        #self.redirect('/serve/%s' % blob_info.key())
-
-#image  = self.request.POST.get("files[]").file
-        #print self.graph.put_photo(image,"This is a bit of a long description of this image. ope you like it", "10100739842477767")
-
-
-#Which page_id to take? Need to reject more then one selection client side? Radio box?
-
-
-    # graph = facebook.GraphAPI(self.current_user['access_token'])
-    #         print "groups "+str(graph.get_connections("me","groups"))
-      
-    # def post(self):
-    #     url = self.request.get('url')
-    #     file = urllib2.urlopen(url)
-    #     graph = facebook.GraphAPI(self.current_user['access_token'])
-    #     response = graph.put_photo(file, "Test Image")
-    #     photo_url = ("http://www.facebook.com/"
-    #                  "photo.php?fbid={0}".format(response['id']))
-    #     self.redirect(str(photo_url))
