@@ -155,25 +155,35 @@ class FormHandler(BaseHandler):
         template = jinja_environment.get_template('templates/form.html')
         pages = self.graph.get_connections("me","accounts")
         groups = self.graph.get_connections("me","groups")
+        
         self.response.out.write(template.render(dict(
                     facebook_app_id=FACEBOOK_APP_ID,
                     current_user=self.current_user,
                     pages=pages['data'],
                     groups=groups['data']
                     )))
-
+        
     def post(self):
         description = self.request.get('description_input')
         select_pages = self.request.get('select_pages',allow_multiple=True)
         select_groups = self.request.get('select_groups',allow_multiple=True)
-        #Which page_id to take? Need to reject more then one selection client side? Radio box?
-        for page in select_pages:
-            page_id = self.graph.put_wall_post(description, {}, page)['id']
-        for group in select_groups:
-            print self.graph.put_wall_post(description, {}, group)
+#Which page_id to take? Need to reject more then one selection client side? Radio box?
+        # for page in select_pages:
+        #     page_id = self.graph.put_wall_post(description, att{"picture":"facebook.com/10100739842477767"}, page)['id']
+        # for group in select_groups:
+        #     print self.graph.put_wall_post(description, {}, group)
         
         #
+
+class ImageHandler(BaseHandler):
         
+    def post(self):
+        image  = self.request.POST.get("files[]").file
+        print self.graph.put_photo(image,"This is a bit of a long description of this image. ope you like it", "10100739842477767")
+
+
+#Which page_id to take? Need to reject more then one selection client side? Radio box?
+
 
     # graph = facebook.GraphAPI(self.current_user['access_token'])
     #         print "groups "+str(graph.get_connections("me","groups"))
@@ -198,7 +208,7 @@ jinja_environment = jinja2.Environment(
     loader=jinja2.FileSystemLoader(os.path.dirname(__file__)) , autoescape=True, extensions=['jinja2.ext.autoescape'])
 
 application = webapp2.WSGIApplication(
-    [('/', HomeHandler), ('/login', LoginHandler), ('/logout', LogoutHandler), ('/form', FormHandler),('/form/post',FormHandler)],
+    [('/', HomeHandler), ('/login', LoginHandler), ('/logout', LogoutHandler), ('/form', FormHandler),('/form/post',FormHandler),('/form/image',ImageHandler)],
     debug=True,
     config=config
 )
