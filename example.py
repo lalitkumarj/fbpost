@@ -35,7 +35,9 @@ import webapp2
 import os
 import jinja2
 import urllib2
+import urllib
 import json
+import random
 
 from google.appengine.ext import blobstore
 from google.appengine.ext.webapp import blobstore_handlers
@@ -45,8 +47,8 @@ from webapp2_extras import sessions
 
 config = {}
 config['webapp2_extras.sessions'] = dict(secret_key='')
-
-upload_url = blobstore.create_upload_url('/upload')
+#upload_url_rpc = blobstore.create_upload_url_async('/upload')
+#upload_url = upload_url_rpc.get_result()
 
 class User(db.Model):
     id = db.StringProperty(required=True)
@@ -158,6 +160,7 @@ class LoginHandler(BaseHandler):
 class FormHandler(BaseHandler):
     def get(self):
         template = jinja_environment.get_template('templates/form.html')
+        upload_url = blobstore.create_upload_url('/upload')
         pages = self.graph.get_connections("me","accounts")
         groups = self.graph.get_connections("me","groups")
         
@@ -198,18 +201,25 @@ class FormHandler(BaseHandler):
         
         
 
-class ImageHandler(blobstore_handlers.BlobstoreUploadHandler):
-        
+class ImageHandler(blobstore_handlers.BlobstoreUploadHandler):        
     def post(self):
         upload_files = self.get_uploads('files[]')
         blob_info = upload_files[0]
-        self.response.headers['Content-Type'] = 'application/json'   
         obj = {
             'key': str(blob_info.key()) 
             } 
         print "make a key"+obj['key']
-        self.response.out.write(json.dumps(obj))
+        self.redirect("/upload-redirect?"+urllib.urlencode(obj))
+        
 
+class RedirectHandler(BaseHandler):    
+    def get(self):
+        obj = {
+            'key': self.request.get('key')
+            } 
+        print "make a key"+obj['key']
+        self.response.headers['Content-Type'] = 'application/json'   
+        self.response.out.write(json.dumps(obj))
 
 
         #self.redirect('/serve/%s' % blob_info.key())
@@ -244,7 +254,7 @@ jinja_environment = jinja2.Environment(
     loader=jinja2.FileSystemLoader(os.path.dirname(__file__)) , autoescape=True, extensions=['jinja2.ext.autoescape'])
 
 application = webapp2.WSGIApplication(
-    [('/service', FormHandler),('/', HomeHandler), ('/login', LoginHandler), ('/logout', LogoutHandler), ('/service/post',FormHandler),('/upload',ImageHandler)],
+    [('/service', FormHandler),('/', HomeHandler), ('/login', LoginHandler), ('/logout', LogoutHandler), ('/service/post',FormHandler),('/upload',ImageHandler), ('/upload-redirect?',RedirectHandler)],
     debug=True,
     config=config
 )
