@@ -122,12 +122,13 @@ class BaseHandler(webapp2.RequestHandler):
 
         """
         return self.session_store.get_session()
-
+    
+    @property
     def graph(self):
         """Returns a Graph API client for the current user."""
         if not hasattr(self, "_graph"):
             if self.current_user:
-                self._graph = facebook.GraphAPI(self.current_user.access_token)
+                self._graph = facebook.GraphAPI(self.current_user['access_token'])
             else:
                 self._graph = facebook.GraphAPI()
         return self._graph
@@ -152,14 +153,27 @@ class LoginHandler(BaseHandler):
 class FormHandler(BaseHandler):
     def get(self):
         template = jinja_environment.get_template('templates/form.html')
+        pages = self.graph.get_connections("me","accounts")
+        groups = self.graph.get_connections("me","groups")
         self.response.out.write(template.render(dict(
                     facebook_app_id=FACEBOOK_APP_ID,
-                    current_user=self.current_user
+                    current_user=self.current_user,
+                    pages=pages['data'],
+                    groups=groups['data']
                     )))
 
     def post(self):
+        description = self.request.get('description_input')
+        select_pages = self.request.get('select_pages',allow_multiple=True)
+        select_groups = self.request.get('select_groups',allow_multiple=True)
+        #Which page_id to take? Need to reject more then one selection client side? Radio box?
+        for page in select_pages:
+            page_id = self.graph.put_wall_post(description, {}, page)['id']
+        for group in select_groups:
+            print self.graph.put_wall_post(description, {}, group)
         
-
+        #
+        
 
     # graph = facebook.GraphAPI(self.current_user['access_token'])
     #         print "groups "+str(graph.get_connections("me","groups"))
@@ -184,7 +198,7 @@ jinja_environment = jinja2.Environment(
     loader=jinja2.FileSystemLoader(os.path.dirname(__file__)) , autoescape=True, extensions=['jinja2.ext.autoescape'])
 
 application = webapp2.WSGIApplication(
-    [('/', HomeHandler), ('/login', LoginHandler), ('/logout', LogoutHandler), ('/form', FormHandler)],
+    [('/', HomeHandler), ('/login', LoginHandler), ('/logout', LogoutHandler), ('/form', FormHandler),('/form/post',FormHandler)],
     debug=True,
     config=config
 )
