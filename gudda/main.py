@@ -42,11 +42,17 @@ class FormHandler(webapp2.RequestHandler):
 	    
 	    # feedbackEntity.put()
 
+class FileHandler(webapp2.RequestHandler):
+	def post(self):
+		print 'hello'
+		#print self.request
+	    #description = self.request.get('description_input')
+	    #print description
 	
 jinja_environment = jinja2.Environment(
     loader=jinja2.FileSystemLoader(os.path.dirname(__file__))
 )
 
 app = webapp2.WSGIApplication([
-    ('/form',MainHandler),('/form/post',FormHandler)
+    ('/form',MainHandler),('/form/post',FormHandler),('/form/file',FileHandler)
 ], debug=True)
