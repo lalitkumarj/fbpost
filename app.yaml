@@ -7,7 +7,7 @@ threadsafe: true
 
 handlers:
 - url: /.*
-  script: facebookoauth.application
+  script: example.application
 
 libraries:
 - name: webapp2

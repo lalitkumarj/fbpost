@@ -27,8 +27,8 @@ as it handles some complex authentication states that can only be detected
 in client-side code.
 """
 
-FACEBOOK_APP_ID = "645625452147527"
-FACEBOOK_APP_SECRET = "667a6ffb14c4ef9a859a8b2fcbfe6c27"
+FACEBOOK_APP_ID = "1382784325310173"
+FACEBOOK_APP_SECRET = "36a0bfc09d67dc011f7a90e99a94660f"
 
 import base64
 import cgi
@@ -76,22 +76,23 @@ class BaseHandler(webapp2.RequestHandler):
             user_id = parse_cookie(self.request.cookies.get("fb_user"))
             if user_id:
                 self._current_user = User.get_by_id(user_id)
+            print_debug("cookie",self._current_user)
         return self._current_user
     
 
 
 class MainFormHandler(BaseHandler):
     def get(self):
-        path = "form.html"
-        graph = facebook.GraphAPI(self.current_user.access_token)
-        print self.current_user
-        groups = graph.get_connections("me","groups")
-
-        print groups
-        args = dict(current_user=self.current_user, groups = groups)
-        template = JINJA_ENVIRONMENT.get_template(path)
-        self.response.out.write(template.render(args))
-
+        if self.current_user != None:
+            path = "form.html"
+            graph = facebook.GraphAPI(self.current_user.access_token)
+            print self.current_user
+            friends = graph.get_connections("me","groups")
+            args = dict(current_user=self.current_user, groups=friends['data'])
+            template = JINJA_ENVIRONMENT.get_template(path)
+            self.response.out.write(template.render(args))
+        else:
+            self.redirect("/")
 
         
 class HomeHandler(BaseHandler):
@@ -105,7 +106,6 @@ class HomeHandler(BaseHandler):
 class LoginHandler(BaseHandler):
     def get(self):
         verification_code = self.request.get("code")
-        print_debug("v_code",verification_code)
         args = dict(client_id=FACEBOOK_APP_ID,
                     redirect_uri=self.request.path_url)
         if self.request.get("code"):
@@ -115,13 +115,13 @@ class LoginHandler(BaseHandler):
                 "https://graph.facebook.com/oauth/access_token?" +
                 urllib.urlencode(args)).read())
             access_token = response["access_token"][-1]
-
+            print response
             # Download the user profile and cache a local instance of the
             # basic profile info
             profile = json.load(urllib.urlopen(
                 "https://graph.facebook.com/me?" +
                 urllib.urlencode(dict(access_token=access_token))))
-
+            print profile
             #Create the user and add them to the db
             user = User(id=str(profile["id"]),
                         name=profile["name"], access_token=access_token,
@@ -129,7 +129,7 @@ class LoginHandler(BaseHandler):
             user.put()
             set_cookie(self.response, "fb_user", str(profile["id"]),
                        expires=time.time() + 30 * 86400)
-            self.redirect("/")
+            self.redirect("/form")
         else:
             self.redirect(
                 "https://graph.facebook.com/oauth/authorize?" +
