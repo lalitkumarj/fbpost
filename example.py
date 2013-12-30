@@ -151,7 +151,7 @@ class HomeHandler(BaseHandler):
 
 class LoginHandler(BaseHandler):
     def get(self):
-        template = jinja_environment.get_template('templates/login.html')
+        template = jinja_environment.get_template('login.html')
         self.response.out.write(template.render(dict(
                     facebook_app_id=FACEBOOK_APP_ID,
                     current_user=self.current_user
@@ -159,18 +159,21 @@ class LoginHandler(BaseHandler):
         
 class FormHandler(BaseHandler):
     def get(self):
-        template = jinja_environment.get_template('templates/form.html')
-        upload_url = blobstore.create_upload_url('/upload')
-        pages = self.graph.get_connections("me","accounts")
-        groups = self.graph.get_connections("me","groups")
-        
-        self.response.out.write(template.render(dict(
-                    facebook_app_id=FACEBOOK_APP_ID,
-                    current_user=self.current_user,
-                    pages=pages['data'],
-                    groups=groups['data'],
-                    url = upload_url 
-                    )))
+        if self.current_user != None: 
+            template = jinja_environment.get_template('form.html')
+            upload_url = blobstore.create_upload_url('/upload')
+            pages = self.graph.get_connections("me","accounts")
+            groups = self.graph.get_connections("me","groups")
+            
+            self.response.out.write(template.render(dict(
+                        facebook_app_id=FACEBOOK_APP_ID,
+                        current_user=self.current_user,
+                        pages=pages['data'],
+                        groups=groups['data'],
+                        url = upload_url 
+                        )))
+        else:
+            self.redirect("/")
         
     def post(self):
         description = self.request.get('description_input')
@@ -198,7 +201,7 @@ class FormHandler(BaseHandler):
             #print images.get_serving_url(blob_key)
             self.graph.put_wall_post(description, {"link":"http://facebook.com/%s"%(posted_id),"picture":images.get_serving_url(blob_key)}, group)
             
-        
+            self.redirect("/login")
         
 
 class ImageHandler(blobstore_handlers.BlobstoreUploadHandler):        
@@ -222,6 +225,23 @@ class RedirectHandler(BaseHandler):
         self.response.out.write(json.dumps(obj))
 
 
+
+class LogoutHandler(BaseHandler):
+    def get(self):
+        if self.current_user is not None:
+            self.session['user'] = None
+        self.redirect("/login")
+
+jinja_environment = jinja2.Environment(
+    loader=jinja2.FileSystemLoader(os.path.dirname("templates/base.html")) , autoescape=True, extensions=['jinja2.ext.autoescape'])
+
+application = webapp2.WSGIApplication(
+    [('/service', FormHandler),('/', HomeHandler), ('/login', LoginHandler), ('/logout', LogoutHandler), ('/service/post',FormHandler),('/upload',ImageHandler), ('/upload-redirect?',RedirectHandler)],
+    debug=True,
+    config=config
+)
+
+
         #self.redirect('/serve/%s' % blob_info.key())
 
 #image  = self.request.POST.get("files[]").file
@@ -242,19 +262,3 @@ class RedirectHandler(BaseHandler):
     #     photo_url = ("http://www.facebook.com/"
     #                  "photo.php?fbid={0}".format(response['id']))
     #     self.redirect(str(photo_url))
-
-
-class LogoutHandler(BaseHandler):
-    def get(self):
-        if self.current_user is not None:
-            self.session['user'] = None
-        self.redirect("/login")
-
-jinja_environment = jinja2.Environment(
-    loader=jinja2.FileSystemLoader(os.path.dirname(__file__)) , autoescape=True, extensions=['jinja2.ext.autoescape'])
-
-application = webapp2.WSGIApplication(
-    [('/service', FormHandler),('/', HomeHandler), ('/login', LoginHandler), ('/logout', LogoutHandler), ('/service/post',FormHandler),('/upload',ImageHandler), ('/upload-redirect?',RedirectHandler)],
-    debug=True,
-    config=config
-)

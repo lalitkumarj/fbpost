@@ -1,77 +1,205 @@
-{% autoescape true %}
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml">
-  <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
-    <title>Facebook OAuth Example</title>
-    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
-  </head>
-  <body>
-    {% if current_user %}
-    <p><a href="{{ current_user.profile_url }}"><img src="http://graph.facebook.com/{{ current_user.id }}/picture"/></a></p>
-    <p>You are logged in as {{ current_user.name|escape }}</p>
-    <p><a href="/logout">Log out</a></p>
-    {% else %}
-    <p>You are not yet logged into this site</p>
-    <p><a href="/login">Log in with Facebook</a></p>
-    {% endif %}
-    
-    
-    <form id="description_form" class="form-inline">
-      <div class="form-group">
-	<label for="description_input">Description </label>
-	<textarea id="description_input" name="description_input" class="form-control" rows="10"></textarea> 	
-	<input type="submit" class="btn btn-default" value="Submit">
-	{% for page in pages %}
-	<input type="checkbox" name="select_pages" value="{{page.id}}"> {{page.name}} </input>
-	{% endfor %}
-	<br/><br/><br/>
-	{% for group in groups %}
-	<input type="checkbox" name="select_groups" value="{{group.id}}"> {{group.name}} </input>
-	{% endfor %}
-	<input type="hidden" id="imagekey" name="imagekey"/>
+{% extends "base.html" %}
+{% block title %}Photot Uploader{% endblock %}
+{% block content %}
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+<script src="js/vendor/jquery.ui.widget.js"></script>
+<script src="js/jquery.iframe-transport.js"></script>
+<script src="js/jquery.fileupload.js"></script>
+<script src="http://flesler-plugins.googlecode.com/files/jquery.scrollTo-1.4.3.1-min.js"></script>
+<script src="http://blueimp.github.io/JavaScript-Load-Image/js/load-image.min.js"></script>
+<script src="js/jquery.fileupload-process.js"></script>
+<script src="js/jquery.fileupload-image.js"></script>
+<script src="js/jquery.fileupload-validate.js"></script>
+<link rel="stylesheet" href="css/jquery.fileupload.css">
+
+<div class="container">
+  <div class="row">
+    <div name="top_info">
+      <h2>Step 2: Choose a picture to upload</h2>
+      <p>
+	<a href="{{ current_user.profile_url }}"><img src="http://graph.facebook.com/{{ current_user.id }}/picture"/></a> You are logged in as {{ current_user.name|escape }}
+      </p>
+    </div>
+  </div>
+
+  <div class="row">
+    <div name="image_uploader">
+      <span class="btn btn-success fileinput-button">
+        <i class="glyphicon glyphicon-plus"></i>
+        <span>Add file...</span>
+	<input id="fileupload" type="file" name="files[]" data-url="{{url}}" enctype="multipart/form-data" />
+      </span>
+      <br>
+       <br>
+       <div id="progress" class="progress">
+         <div class="progress-bar progress-bar-success"></div>
+       </div>
+       <!-- The container for the uploaded files -->
+       <div id="files" class="files"></div>
+       <br>
+       
+       <script>
+      $(function () {
+	 'use strict';
+	 var url = "{{url}}";
+	 
+	 $('#fileupload').fileupload({
+	 url: url,
+	 dataType: 'json',
+	 autoUpload: true,
+	 previewMaxWidth: 100,
+	 previewMaxHeight: 100,
+	 previewCrop: true
+	    	  }).on('fileuploadadd', function (e, data) {
+	 data.context = $('<div/>').appendTo('#files');
+	 $.each(data.files, function (index, file) {
+	 var node = $('<p/>')
+	 .append($('<span/>').text(file.name));
+	 if (!index) {
+				    node
+	 .append('<br>')
+	 // .append(uploadButton.clone(true).data(data));
+	 }
+	 node.appendTo(data.context);
+	 });
+	 }).on('fileuploadprocessalways', function (e, data) {
+	 var index = data.index,
+	 file = data.files[index],
+	 node = $(data.context.children()[index]);
+	 if (file.preview) {
+	 node
+	 .prepend('<br>')
+				      .prepend(file.preview);
+	 }
+	 if (file.error) {
+	 node
+	 .append('<br>')
+	 .append($('<span class="text-danger"/>').text(file.error));
+	 }
+	 if (index + 1 === data.files.length) {
+	 data.context.find('button')
+         .text('Upload')
+	 .prop('disabled', !!data.files.error);
+	 }
+	 }).on('fileuploadprogressall', function (e, data) {
+	 var progress = parseInt(data.loaded / data.total * 100, 10);
+	 $('#progress .progress-bar').css(
+	 'width',
+					  progress + '%'
+         );
+	 }).on('fileuploaddone', function (e, data) {
+	 	 console.log(data.result.key);
+	 $('#imagekey').val(data.result.key);
+	 $('#main_form').css("display", "block");
+	 $.scrollTo('#main_form')
+
+	 $.each(data.result.files, function (index, file) {
+         if (file.url) {
+	 var link = $('<a>')
+	   .attr('target', '_blank')
+	   .prop('href', file.url);
+	   $(data.context.children()[index])
+	   .wrap(link);
+           } else if (file.error) {
+	   var error = $('<span class="text-danger"/>').text(file.error);
+           $(data.context.children()[index])
+	   .append('<br>')
+		    .append(error);
+	   }
+	   });
+	   }).on('fileuploadfail', function (e, data) {
+	   $.each(data.files, function (index, file) {
+           var error = $('<span class="text-danger"/>').text('File upload failed.');
+	   $(data.context.children()[index])
+	   .append('<br>')
+	   .append(error);
+						      });
+	   }).prop('disabled', !$.support.fileInput)
+	   .parent().addClass($.support.fileInput ? undefined : 'disabled');
+      	   });
+       </script>
+    </div>
+  </div>
+
+  <div class="row">      
+    <div name="main_form" id="main_form" style="display: none">  
+      <h2>Step 3: Enter a description</h2>
+      <form id="description_form">
+	<div class="form-group">
+	  <label for="description_input">Description </label>
+	  <textarea id="description_input" name="description_input" class="form-control" rows="10"></textarea>
+ 	</div>
+	
+	<div class="form-group">
+	  <label><h2>Step 4: Select Page</h2><h4 style="color: #686868">A post will appear on this page</h4></label></br>
+	  {% for page in pages %}
+	  <label class="checkbox-inline">
+	    <input type="checkbox" name="select_pages"  value="{{page.id}}"> {{page.name}}
+	  </label>
+	  {% endfor %}
 	</div>
+	
+	<div class="form-group">
+	  <label><h2>Step 5: Select Groups</h2> <h4 style="color: #686868">A link of the posts on the pages above will be posted these groups.</h4></label></br>
+	  {% for group in groups %}
+	  <label class="checkbox-inline">
+	    <input type="checkbox" name="select_groups" value="{{group.id}}"> {{group.name}}
+	  </label>
+	  {% endfor %}
+	</div>
+	
+	<input type="hidden" id="imagekey" name="imagekey"  class="form-control"/>
+	<input type="submit" class="btn btn-default btn-lg"  class="form-control" value="Submit">
       </form>
       
-     <script>
+      <script>
 	$("#description_form").on( "submit", function (event) {
 	console.log($(this).serialize() );
-	
 	$.post("/service/post", $("#description_form").serialize());
 	$("#description_form")[0].reset();
+	window.location = "/login"
 	return false;
 	} );
       </script>
-      -->
-      <div id="progress">
-	<div class="bar" style="width: 0%;height: 10px; background: green;"></div>
-      </div>
-
-      <input id="fileupload" type="file" name="files[]" data-url="{{url}}" enctype="multipart/form-data" />
-	<script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
-	<script src="js/vendor/jquery.ui.widget.js"></script>
-	<script src="js/jquery.iframe-transport.js"></script>
-	<script src="js/jquery.fileupload.js"></script>
-	<script>
-	  $(function () {
-	  $('#fileupload').fileupload({
-          dataType: 'json',
-          done: function (e, data) {
-	                             //Get the blob key here!
-	                             console.log(data.result.key); 
-                                     $('#imagekey').val(data.result.key); 
-                                   },
-          progressall: function (e, data) {
-    	                                    var progress = parseInt(data.loaded / data.total * 100, 10);
-                                            $('#progress .bar').css('width',progress + '%');
-	  }
-	  });
-	  });
-	</script>
+    </div>
+  </div>
 
 
+</div>
 
-    </body>
-  </html>
-  {% endautoescape %}
-  
+{% endblock %}
+	   '//jquery-file-upload.appspot.com/' : 'service/post/'
+	    // uploadButton = $('<button/>')
+	    //     .addClass('btn btn-primary')
+	    //     .prop('disabled', true)
+	    //     .text('Processing...')
+	    //     .on('click', function () {
+	    //         var $this = $(this),
+	    //             data = $this.data();
+	    //         $this
+	    //             .off('click')
+            //             .text('Abort')
+	    //             .on('click', function () {
+	    //                 $this.remove();
+	    //                 data.abort();
+	    //             });
+	    //         data.submit().always(function () {
+	    //             $this.remove();
+	    //         });
+	    //     });
+	 <!-- $(function () { -->
+	 <!-- $('#fileupload').fileupload({ -->
+	 <!-- dataType: 'json', -->
+ 	 <!-- done: function (e, data) { -->
+	 <!-- Get the blob key here! -->
+	 <!-- console.log(data.result.key); -->
+	 <!-- $('#imagekey').val(data.result.key); -->
+	 <!-- $('#main_form').css("display", "block"); -->
+	 <!--      $.scrollTo('#main_form') -->
+	 <!-- }, -->
+         <!-- progressall: function (e, data) { -->
+	 <!-- var progress = parseInt(data.loaded / data.total * 100, 10); -->
+	 <!-- $('#progress .bar').css('width',progress + '%'); -->
+	 <!-- } -->
+	 <!-- }); -->
+      	 <!-- }); -->
