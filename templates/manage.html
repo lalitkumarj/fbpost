@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Photot Uploader{% endblock %}
+{% block content %}
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+<script src="js/vendor/jquery.ui.widget.js"></script>
+<script src="js/jquery.iframe-transport.js"></script>
+<script src="js/jquery.fileupload.js"></script>
+<script src="http://flesler-plugins.googlecode.com/files/jquery.scrollTo-1.4.3.1-min.js"></script>
+<script src="http://blueimp.github.io/JavaScript-Load-Image/js/load-image.min.js"></script>
+<script src="js/jquery.fileupload-process.js"></script>
+<script src="js/jquery.fileupload-image.js"></script>
+<script src="js/jquery.fileupload-validate.js"></script>
+<link rel="stylesheet" href="css/jquery.fileupload.css">
+
+<div class="container">
+  <div class="row">
+    <div name="top_info">
+      <h2>Manage Posts</h2>
+      <p>
+	<a href="{{ current_user.profile_url }}"><img src="http://graph.facebook.com/{{ current_user.id }}/picture"/></a> You are logged in as {{ current_user.name|escape }}
+      </p>
+    </div>
+  </div>
+
+  <div class="row">
+    <table class="table">
+      <tr>
+	<th> Picture </th>
+	<th> Status </th>
+	<th> Container </th>
+	<th> Post Link </th>
+	<th> Post Date </th>
+      </tr>
+      {% for post in posts %}
+      <tr>
+	<td> <img src="{{post.picture_url}}" width="100px" class="img-thumbnail"></img></td>
+	<td> post.status </td>
+	<td> {{post.container}}</td>
+	<td> <a href="{{post.post_url}}"> link </a> </td>
+	<td> {{post.date}}</td>
+      </tr>
+      {% endfor %}
+    </table>
+  </div>
+  </div>
+
+
+</div>
+
+{% endblock %}

@@ -133,8 +133,8 @@
 	<div class="form-group">
 	  <label><h2>Step 4: Select Page</h2><h4 style="color: #686868">A post will appear on this page</h4></label></br>
 	  {% for page in pages %}
-	  <label class="checkbox-inline">
-	    <input type="checkbox" name="select_pages"  value="{{page.id}}"> {{page.name}}
+	  <label class="radio-inline">
+	    <input type="radio" name="select_pages"  value="{{page.id}}"> {{page.name}}
 	  </label>
 	  {% endfor %}
 	</div>
@@ -155,9 +155,8 @@
       <script>
 	$("#description_form").on( "submit", function (event) {
 	console.log($(this).serialize() );
-	$.post("/service/post", $("#description_form").serialize());
+	$.post("/service/post", $("#description_form").serialize()).done( function(e) {window.location = "/end"});
 	$("#description_form")[0].reset();
-	window.location = "/end"
 	return false;
 	} );
       </script>
