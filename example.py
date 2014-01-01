@@ -1,32 +1,3 @@
-#!/usr/bin/env python
-#
-# Copyright 2010 Facebook
-#
-# Licensed under the Apache License, Version 2.0 (the "License"); you may
-# not use this file except in compliance with the License. You may obtain
-# a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-# WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-# License for the specific language governing permissions and limitations
-# under the License.
-
-"""
-A barebones AppEngine application that uses Facebook for login.
-
-1.  Make sure you add a copy of facebook.py (from python-sdk/src/)
-    into this directory so it can be imported.
-2.  Don't forget to tick Login With Facebook on your facebook app's
-    dashboard and place the app's url wherever it is hosted
-3.  Place a random, unguessable string as a session secret below in
-    config dict.
-4.  Fill app id and app secret.
-5.  Change the application name in app.yaml.
-
-"""
 FACEBOOK_APP_ID = '1382784325310173'
 FACEBOOK_APP_SECRET = '36a0bfc09d67dc011f7a90e99a94660f'
 
