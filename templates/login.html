@@ -27,7 +27,7 @@
   FB.Event.subscribe('{% if current_user %}auth.logout{% else %}auth.login{% endif %}', function(response) {
   $('#fb-stuff').empty();
   $('#page-banner').text("Loading...");
-  {% if current_user %} window.location = "/logout" {% else %} window.location = "/service"; {% endif %}
+  {% if current_user %} window.location = "/logout" {% else %} window.location = "/portal"; {% endif %}
   });
   };
   (function() {

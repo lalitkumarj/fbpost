@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Photot Uploader{% endblock %}
+{% block title %}Photo Uploader{% endblock %}
 {% block content %}
 <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
 <script src="js/vendor/jquery.ui.widget.js"></script>
@@ -16,9 +16,6 @@
   <div class="row">
     <div name="top_info">
       <h2>Manage Posts</h2>
-      <p>
-	<a href="{{ current_user.profile_url }}"><img src="http://graph.facebook.com/{{ current_user.id }}/picture"/></a> You are logged in as {{ current_user.name|escape }}
-      </p>
     </div>
   </div>
 
@@ -27,17 +24,34 @@
       <tr>
 	<th> Picture </th>
 	<th> Status </th>
-	<th> Container </th>
-	<th> Post Link </th>
+	<th> Groups </th>
+	<th> Page Post Link </th>
 	<th> Post Date </th>
+	<th>  </th>
       </tr>
       {% for post in posts %}
       <tr>
 	<td> <img src="{{post.picture_url}}" width="100px" class="img-thumbnail"></img></td>
-	<td> post.status </td>
-	<td> {{post.container}}</td>
-	<td> <a href="{{post.post_url}}"> link </a> </td>
+	<td> {{post.status}} </td>
+	<td> {% for name,url in post.groups.iteritems() %} <a href="{{url}}">{{name}}</a>{% endfor %}</td>
+	<td> <a href="{{post.post_url}}"> {{post.container}} </a> </td>
 	<td> {{post.date}}</td>
+	<td> 
+	  <form id="delete_form">
+	    <input type="hidden" id="postkey" name="postkey" value="{{post.key}}" class="form-control"/>
+	    <input type="submit" class="btn btn-default btn-med"  class="form-control" value="Delete">
+	  </form>
+	        <script>
+		  $("#delete_form").on( "submit", function (event) {
+		  console.log($(this).serialize() );
+		  $.post("/manage/deletepost", $("#delete_form").serialize()).done( function(e) {
+		  window.location="/manage"});
+		  
+		  return false;
+	} );
+		</script>
+		
+	</td>
       </tr>
       {% endfor %}
     </table>

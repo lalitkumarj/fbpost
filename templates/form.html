@@ -149,12 +149,14 @@
 	</div>
 	
 	<input type="hidden" id="imagekey" name="imagekey"  class="form-control"/>
-	<input type="submit" class="btn btn-default btn-lg"  class="form-control" value="Submit">
+	<input type="submit" id="submitbutton" class="btn btn-default btn-lg"  class="form-control" value="Submit">
       </form>
       
       <script>
+	
 	$("#description_form").on( "submit", function (event) {
 	console.log($(this).serialize() );
+	$('#submitbutton').val("Hold you horses!!! Submitting...");
 	$.post("/service/post", $("#description_form").serialize()).done( function(e) {window.location = "/end"});
 	$("#description_form")[0].reset();
 	return false;

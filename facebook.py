@@ -437,9 +437,12 @@ def get_user_from_cookie(cookies, app_id, app_secret):
 
     """
     cookie = cookies.get("fbsr_" + app_id, "")
+    
     if not cookie:
         return None
+
     parsed_request = parse_signed_request(cookie, app_secret)
+    print "parser_request"+str(parsed_request)
     if not parsed_request:
         return None
     try:
@@ -503,7 +506,6 @@ def auth_url(app_id, canvas_url, perms=None, **kwargs):
 
 def get_access_token_from_code(code, redirect_uri, app_id, app_secret):
     """Get an access token from the "code" returned from an OAuth dialog.
-
     Returns a dict containing the user-specific access token and its
     expiration date (if applicable).
 
@@ -516,8 +518,8 @@ def get_access_token_from_code(code, redirect_uri, app_id, app_secret):
     }
     # We would use GraphAPI.request() here, except for that the fact
     # that the response is a key-value pair, and not JSON.
-    response = urllib2.urlopen("https://graph.facebook.com/oauth/access_token" +
-                               "?" + urllib.urlencode(args)).read()
+    print "https://graph.facebook.com/oauth/access_token?"+urllib.urlencode(args)
+    response = urllib2.urlopen("https://graph.facebook.com/oauth/access_token?"+urllib.urlencode(args)).read()
     query_str = parse_qs(response)
     if "access_token" in query_str:
         result = {"access_token": query_str["access_token"][0]}
@@ -544,9 +546,8 @@ def get_app_access_token(app_id, app_secret):
     args = {'grant_type': 'client_credentials',
             'client_id': app_id,
             'client_secret': app_secret}
-
-    file = urllib2.urlopen("https://graph.facebook.com/oauth/access_token?" +
-                           urllib.urlencode(args))
+    
+    file = urllib2.urlopen("http://graph.facebook.com/oauth/access_token?"+urllib.urlencode(args))
 
     try:
         result = file.read().split("=")[1]

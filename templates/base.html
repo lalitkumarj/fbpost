@@ -32,18 +32,39 @@
             </li>
 	  </ul>
 	  <ul class="nav navbar-nav navbar-right">
-            <li> 
+
+            {% if current_user %}
+	    <li>
+	      <a href="{{ current_user.profile_url }}"><img src="http://graph.facebook.com/{{ current_user.id }}/picture" width="60%"/></a> 
+	    {% endif %}
+	    </li>
+	    <li> 
 	      {% if current_user %}
-              <a href="/logout">Log Out</a>
+              <a href="/logout" onClick="FB.logout();">Log Out</a>
 	      {% else %}
-	      <a href="/login">Log Out</a>
+	      <a href="/login">Log In</a>
 	      {% endif %}
             </li>
       </ul>
     </nav>
 	
       </div>
-     </div>
+     </div> 
+   
+     <div id="fb-root"></div>
+     <script>
+       window.fbAsyncInit = function() {
+       FB.init({appId: '{{ facebook_app_id }}', status: true, cookie: true, xfbml: true});};
+
+       (function() {
+       var e = document.createElement('script');
+       e.type = 'text/javascript';
+       e.src = 'http://connect.facebook.net/en_US/all.js';
+       e.async = true;
+       document.getElementById('fb-root').appendChild(e);
+       }() );
+     </script>
+     
      
      {% block content %}
      {% endblock %}
